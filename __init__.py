@@ -322,7 +322,7 @@ def register():
             description="Boolean for whether the object contains a calcsurf material",
             default=0)
     
-    Object.livi_calc = IntProperty(
+    Object.livi_res = IntProperty(
             name="LiVi res object",
             description="Boolean for whether the object is an extruded result mesh",
             default=0)
