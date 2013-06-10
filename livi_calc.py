@@ -221,57 +221,50 @@ class LiVi_c(object):
             for geo in self.scene.objects:
                 bpy.ops.object.select_all(action = 'DESELECT')
                 self.scene.objects.active = None
-                try:
-                    if geo['calc'] == 1:
-                        self.scene.objects.active = geo
-                        geo.select = True
-                        if frame == 0:
-                            while len(geo.data.vertex_colors) > 0:
-                                bpy.ops.mesh.vertex_color_remove()
-                            
-                        bpy.ops.mesh.vertex_color_add()
-                        geo.data.vertex_colors[frame].name = str(frame)
-                        vertexColour = geo.data.vertex_colors[frame]
-                 
-                        for face in geo.data.polygons:
-                            if "calcsurf" in str(geo.data.materials[face.material_index].name):
-                                if self.scene['cp'] == 1:
-                                    for loop_index in face.loop_indices:
-                                        v = geo.data.loops[loop_index].vertex_index
-                                        col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
-                                        lcol_i.append(col_i)
-                                        vertexColour.data[loop_index].color = rgb[col_i+mcol_i]
+                if geo.livi_calc == 1:
+                    self.scene.objects.active = geo
+                    geo.select = True
+                    if frame == 0:
+                        while len(geo.data.vertex_colors) > 0:
+                            bpy.ops.mesh.vertex_color_remove()
+                        
+                    bpy.ops.mesh.vertex_color_add()
+                    geo.data.vertex_colors[frame].name = str(frame)
+                    vertexColour = geo.data.vertex_colors[frame]
+             
+                    for face in geo.data.polygons:
+                        if "calcsurf" in str(geo.data.materials[face.material_index].name):
+                            if self.scene['cp'] == 1:
+                                for loop_index in face.loop_indices:
+                                    v = geo.data.loops[loop_index].vertex_index
+                                    col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
+                                    lcol_i.append(col_i)
+                                    vertexColour.data[loop_index].color = rgb[col_i+mcol_i]
 #                                    cno = cno + len(geo['cverts'])
-                                    mcol_i = len(list(set(lcol_i)))
-                                
-                                if self.scene['cp'] == 0:
-                                    for loop_index in face.loop_indices:
-                                        vertexColour.data[loop_index].color = rgb[f]
-                                    f += 1
+                                mcol_i = len(list(set(lcol_i)))
+                            
+                            if self.scene['cp'] == 0:
+                                for loop_index in face.loop_indices:
+                                    vertexColour.data[loop_index].color = rgb[f]
+                                f += 1
         
-                except Exception as e:
-                    print(e)
-
         lexport.scene.livi_display_panel = 1
         
         for frame in range(0, self.scene.frame_end+1):
             bpy.ops.anim.change_frame(frame = frame)
             for geo in self.scene.objects:
-                try:
-                    if geo['calc'] == 1:
-                        for vc in geo.data.vertex_colors:
-                            if frame == int(vc.name):
-                                vc.active = 1
-                                vc.active_render = 1
-                                vc.keyframe_insert("active")
-                                vc.keyframe_insert("active_render")
-                            else:
-                                vc.active = 0
-                                vc.active_render = 0
-                                vc.keyframe_insert("active")
-                                vc.keyframe_insert("active_render")
-                except Exception as e:
-                    print(e)
+                if geo.livi_calc == 1:
+                    for vc in geo.data.vertex_colors:
+                        if frame == int(vc.name):
+                            vc.active = 1
+                            vc.active_render = 1
+                            vc.keyframe_insert("active")
+                            vc.keyframe_insert("active_render")
+                        else:
+                            vc.active = 0
+                            vc.active_render = 0
+                            vc.keyframe_insert("active")
+                            vc.keyframe_insert("active_render")
            
         
         bpy.ops.wm.save_mainfile(check_existing = False)

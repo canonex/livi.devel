@@ -625,7 +625,7 @@ class LiVi_e(LiVi_bc):
                         
                         for face in mesh.polygons:
                             if "calcsurf" in str(mesh.materials[face.material_index].name):
-                                geo['calc'] = 1
+                                geo.livi_calc = 1
                                 vsum = Vector((0, 0, 0))
                                 self.scene.objects.active = geo
                                 geo.select = True
@@ -659,7 +659,7 @@ class LiVi_e(LiVi_bc):
                                     geo['cfaces'] = csf
                                     self.reslen = len(calcsurffaces)
                     else:
-                        geo['calc'] = 0
+                        geo.livi_calc = 0
                         for mat in geo.material_slots:
                             mat.material.use_transparent_shadows = True
 

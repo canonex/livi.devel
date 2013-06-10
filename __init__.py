@@ -80,6 +80,7 @@ def register():
 
     # LiVi Export panel properties    
     Scene = bpy.types.Scene
+    Object = bpy.types.Object
     
     Scene.epwdat_name = StringProperty(name="Path", description="EPW processed data file", maxlen=1024, default="")
 
@@ -299,21 +300,33 @@ def register():
             name="3D level", description="Level of 3D effect",
             min=0.1, max=5000, default=2)
           
-    Scene.livi_display_respoints = bpy.props.BoolProperty(
+    Scene.livi_display_respoints = BoolProperty(
             name="Display",
             description="Display results on vertices/faces",
             default=False)
 
-    Scene.livi_display_sel_only = bpy.props.BoolProperty(
+    Scene.livi_display_sel_only = BoolProperty(
             name="Selected only",
             description="Only display results on selected vertices/faces",
             default=True)
     
-    Scene.livi_display_rp_fs = bpy.props.IntProperty(
+    Scene.livi_display_rp_fs = IntProperty(
             name="Font size",
             description="Font size for point display",
             default=13)
+            
+# Object properties
     
+    Object.livi_calc = IntProperty(
+            name="LiVi calc object",
+            description="Boolean for whether the object contains a calcsurf material",
+            default=0)
+    
+    Object.livi_calc = IntProperty(
+            name="LiVi res object",
+            description="Boolean for whether the object is an extruded result mesh",
+            default=0)
+            
 def unregister():
 #    import bpy
     bpy.utils.unregister_module(__name__)

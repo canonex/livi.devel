@@ -29,8 +29,11 @@ class LiVi_d(livi_export.LiVi_e):
         except:
             self.scene['livi_disp_3d'] = 0
         self.clearscened()
+        print("1")
         self.rad_display()
+        print("2")
         self.rp_display = True
+        print("3")
             
     def rad_display(self):
         if len(bpy.app.handlers.frame_change_pre) == 0:
@@ -38,24 +41,16 @@ class LiVi_d(livi_export.LiVi_e):
         j = 0 
         o = 0
         self.obcalclist = []
-        cfs = []
         self.obreslist = []
-        imagelist = []
         
         for geo in self.scene.objects:
-            try:
-                if geo['calc'] == 1:
-                    geo.select = True
-                    if geo.mode != 'OBJECT':
-                        bpy.ops.object.mode_set(mode = 'OBJECT')
-                    bpy.ops.object.select_all(action = 'DESELECT')
-                    for face in geo.data.polygons:
-                        if face.index in geo['cfaces']:
-                            cfs.append((o, face))
-                    self.obcalclist.append(geo)
-                    o = o + 1
-            except Exception as e:
-                        print(e)
+            if geo.type == "Mesh" and geo.livi_calc == 1:
+                geo.select = True
+                if geo.mode != 'OBJECT':
+                    bpy.ops.object.mode_set(mode = 'OBJECT')
+                bpy.ops.object.select_all(action = 'DESELECT')
+                self.obcalclist.append(geo)
+                o = o + 1
 
         for frame in range(0, self.scene.frame_end + 1):
             self.scene.frame_set(frame)
@@ -78,32 +73,29 @@ class LiVi_d(livi_export.LiVi_e):
             resvertco = []
             fextrude = []
             for i, geo in enumerate(self.scene.objects):
-                if geo.type == 'MESH':
-                    try:
-                        if geo['calc'] == 1:
-                            self.scene.objects.active = None
-                            bpy.ops.object.select_all(action = 'DESELECT')
-                            self.scene.objects.active = geo
-                            geo.select = True
-                            bpy.ops.object.mode_set(mode = 'EDIT')
-                            bpy.context.tool_settings.mesh_select_mode = [False, False, True]
-                            bpy.ops.mesh.select_all(action = 'DESELECT')
-                            bpy.ops.object.mode_set(mode = 'OBJECT')
-                            
-                            for face in geo.data.polygons:
-                                if face.index in geo['cfaces']:
-                                    face.select = True
-                            bpy.ops.object.mode_set(mode = 'EDIT')  
-                            bpy.ops.mesh.duplicate()
-                            bpy.ops.mesh.separate()
-                            bpy.ops.object.mode_set(mode = 'OBJECT')
-                            self.scene.objects[0].name = geo.name+"res"
-                            self.obreslist.append(self.scene.objects[0])
-                            self.scene.objects[0]['res'] = 1
-                            bpy.ops.object.select_all(action = 'DESELECT')
-                            self.scene.objects.active = None
-                    except Exception as e:
-                        print(e)
+                if geo.type == 'MESH' and geo.livi_calc == 1:
+                    self.scene.objects.active = None
+                    bpy.ops.object.select_all(action = 'DESELECT')
+                    self.scene.objects.active = geo
+                    geo.select = True
+                    bpy.ops.object.mode_set(mode = 'EDIT')
+                    bpy.context.tool_settings.mesh_select_mode = [False, False, True]
+                    bpy.ops.mesh.select_all(action = 'DESELECT')
+                    bpy.ops.object.mode_set(mode = 'OBJECT')
+                    
+                    for cf in geo["cfaces"]:
+                        geo.data.polygons[int(cf)].select = True
+
+                    bpy.ops.object.mode_set(mode = 'EDIT')  
+                    bpy.ops.mesh.duplicate()
+                    bpy.ops.mesh.separate()
+                    bpy.ops.object.mode_set(mode = 'OBJECT')
+                    self.scene.objects[0].name = geo.name+"res"
+                    self.obreslist.append(self.scene.objects[0])
+                    self.scene.objects[0].livi_res = 1
+                    bpy.ops.object.select_all(action = 'DESELECT')
+                    self.scene.objects.active = None
+
        
             for obres in self.obreslist:   
                 self.scene.objects.active = obres
