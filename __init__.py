@@ -17,7 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 bl_info = {
-    "name": "Lighting Visualiser (LiVi)",
+    "name": "Lighting Visualiser (LiVi) Development Version",
     "author": "Ryan Southall",
     "version": (0, 3, 0),
     "blender": (2, 6, 7),
@@ -33,7 +33,7 @@ if "bpy" in locals():
     import imp
     imp.reload(livi_ui)
 else:
-    from io_livi import livi_ui
+    from io_livi_dev import livi_ui
 
 import bpy, os, sys, platform
 from bpy.props import BoolProperty, IntProperty, FloatProperty, EnumProperty, StringProperty
@@ -42,25 +42,25 @@ from bpy.props import BoolProperty, IntProperty, FloatProperty, EnumProperty, St
 
 if str(sys.platform) == 'darwin':
     if platform.architecture() == "64bit":
-        os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi/osx/64" 
+        os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi_dev/osx/64" 
     else:
-         os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi/osx"
-    os.environ["RAYPATH"] = "/usr/local/radiance/lib:"+sys.path[0]+"/io_livi/lib"
+         os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi_dev/osx"
+    os.environ["RAYPATH"] = "/usr/local/radiance/lib:"+sys.path[0]+"/io_livi_dev/lib"
 
 elif str(sys.platform) == 'win32':
     if os.path.isdir(r"C:\Program Files (x86)\Radiance"):
-        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files (x86)\Radiance\bin;"+sys.path[0]+"\io_livi\windows" 
-        os.environ["RAYPATH"] = r"C:\Program Files (x86)\Radiance\lib;"+sys.path[0]+"\io_livi\lib"
+        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files (x86)\Radiance\bin;"+sys.path[0]+"\io_livi_dev\windows" 
+        os.environ["RAYPATH"] = r"C:\Program Files (x86)\Radiance\lib;"+sys.path[0]+"\io_livi_dev\lib"
     elif os.path.isdir(r"C:\Program Files\Radiance"):
-        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files\Radiance\bin;"+sys.path[0]+"\io_livi\windows" 
-        os.environ["RAYPATH"] = "C:\Program Files\Radiance\lib;"+sys.path[0]+"\io_livi\lib"
+        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files\Radiance\bin;"+sys.path[0]+"\io_livi_dev\windows" 
+        os.environ["RAYPATH"] = "C:\Program Files\Radiance\lib;"+sys.path[0]+"\io_livi_dev\lib"
     else:
         print("Cannot find a valid Radiance directory. Please check that you have Radiance installed in either C:\Program Files(x86) (64bit windows) \
 or C:\Program Files (32bit windows)")
               
 elif str(sys.platform) == 'linux':
-    os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi/linux"
-    os.environ["RAYPATH"] = "/usr/local/radiance/lib:"+sys.path[0]+"/io_livi/lib"
+    os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi_dev/linux"
+    os.environ["RAYPATH"] = "/usr/local/radiance/lib:"+sys.path[0]+"/io_livi_dev/lib"
 
 def register():
     bpy.utils.register_module(__name__)

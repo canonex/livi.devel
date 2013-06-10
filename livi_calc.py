@@ -66,12 +66,11 @@ class LiVi_c(object):
         
     def rad_prev(self, lexport, prev_op):
         if os.path.isfile(lexport.filebase+"-0.poly"):
-            cams = [obs for obs in (lexport.scene.objects) if obs.type == 'CAMERA']
-            if len(cams) != 0:
-                cang = cams[0].data.angle*180/pi
-                vv = cang * bpy.context.scene.render.resolution_y/bpy.context.scene.render.resolution_x
-                spotmatrix = cams[0].matrix_world
-                subprocess.call("rvu -n "+str(nproc)+" -vv "+str(vv)+" -vh "+str(cang)+" -vd "+str(-spotmatrix[0][2])+" "+str(-spotmatrix[1][2])+" "+str(-spotmatrix[2][2])+" -vp "+str(cams[0].location[0])+" "+str(cams[0].location[1])+" "+str(cams[0].location[2])+" "+lexport.pparams(lexport.scene.livi_calc_acc)+" "+lexport.filebase+"-"+str(lexport.scene.frame_current)+".oct &", shell = True)
+            cam = lexport.scene.camera
+            if cam != None:
+                cang = cam.data.angle*180/pi
+                vv = cang * lexport.scene.render.resolution_y/lexport.scene.render.resolution_x
+                subprocess.call("rvu -n {0} -vv {1:.3f} -vh {2:.3f} -vd {3[0][2]:.3f} {3[1][2]:.3f} {3[2][2]:.3f} -vp {4[0]:.3f} {4[1]:.3f} {4[2]:.3f} {5} {6}-{7}.oct &".format(nproc, vv, cang, -1*cam.matrix_world, cam.location, lexport.pparams(lexport.scene.livi_calc_acc), lexport.filebase, lexport.scene.frame_current), shell = True)
             else:
                 prev_op.report({'ERROR'}, "There is no camera in the scene. Radiance preview will not work")
         else:
@@ -81,27 +80,25 @@ class LiVi_c(object):
         lexport.clearscened()
         res = [[] for frame in range(0, bpy.context.scene.frame_end+1)]
         for frame in range(0, bpy.context.scene.frame_end+1):
-            if os.path.isfile(lexport.filebase+"-"+str(frame)+".af"):
-                subprocess.call(lexport.rm+" "+lexport.filebase+"-"+str(frame)+".af", shell=True)
-            rtcmd = "rtrace -n "+str(nproc)+" -w "+lexport.sparams(self.acc)+" -h -ov -I -af "+lexport.filebase+"-"+str(frame)+".af "+lexport.filebase+"-"+str(frame)+".oct  < "+lexport.filebase+".rtrace "+self.simlist[int(lexport.metric)] #+" | tee "+lexport.newdir+lexport.fold+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res" 
+            if os.path.isfile("{}-{}.af".format(lexport.filebase, frame)):
+                subprocess.call("{} {}-{}.af".format(lexport.rm, lexport.filebase, frame), shell=True)
+            rtcmd = "rtrace -n {0} -w {1} -h -ov -I -af {2}-{3}.af {2}-{3}.oct  < {2}.rtrace {4}".format(nproc, lexport.sparams(self.acc), lexport.filebase, frame, self.simlist[int(lexport.metric)]) #+" | tee "+lexport.newdir+lexport.fold+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res" 
             rtrun = Popen(rtcmd, shell = True, stdout=PIPE, stderr=STDOUT)
             resfile = open(lexport.newdir+lexport.fold+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res", 'w')
             for line in rtrun.stdout:
                 res[frame].append(float(line.decode()))
-                resfile.write(str(line.decode()))
+            resfile.write("{}".format(res[frame]).strip("]").strip("["))
             resfile.close()
         self.resapply(res, lexport)
         calc_op.report({'INFO'}, "Calculation is finished.")
         
     def rad_glare(self, lexport, calc_op):
         scene = bpy.context.scene
-        gfiles=[]
-        cams = [obs for obs in (scene.objects) if obs.type == 'CAMERA']
-
-        if len(cams) != 0:
+        cam = scene.camera
+        if cam:
+            gfiles=[]
             for frame in range(0, scene.frame_end+1):
-                spotmatrix = cams[0].matrix_world
-                glarecmd = "rpict -vth -vh 180 -vv 180 -x 800 -y 800 -vd "+str(-spotmatrix[0][2])+" "+str(-spotmatrix[1][2])+" "+str(-spotmatrix[2][2])+" -vp "+str(cams[0].location[0])+" "+str(cams[0].location[1])+" "+str(cams[0].location[2])+" "+lexport.sparams(self.acc)+" "+lexport.filename+"-"+str(frame)+".oct | evalglare -c glare"+str(frame)+".hdr"
+                glarecmd = "rpict -w -vth -vh 180 -vv 180 -x 800 -y 800 -vd {0[0][2]} {0[1][2]} {0[2][2]} -vp {1[0]} {1[1]} {1[2]} {2} {3}-{4}.oct | evalglare -c glare{4}.hdr".format(-1*cam.matrix_world, cam.location, lexport.sparams(self.acc), lexport.filename, frame)               
                 glarerun = Popen(glarecmd, shell = True, stdout = PIPE)
                 for line in glarerun.stdout:
                     if line.decode().split(",")[0] == 'dgp':
@@ -109,23 +106,26 @@ class LiVi_c(object):
                         glaretf = open(lexport.filebase+".glare", "w")
                         glaretf.write("{0:0>2d}/{1:0>2d} {2:0>2d}:{3:0>2d}\ndgp: {4:.3f}\ndgi: {5:.3f}\nugr: {6:.3f}\nvcp: {7:.3f}\ncgi: {8:.3f}\nLveil: {9:.3f}\n".format(lexport.simtimes[frame].day, lexport.simtimes[frame].month, lexport.simtimes[frame].hour, lexport.simtimes[frame].minute, *[float(x) for x in glaretext[6:12]]))
                         glaretf.close()
-                subprocess.call("pcond -u 300 glare"+str(frame)+".hdr > glaretm"+str(frame)+".hdr", shell=True)
-                subprocess.call(lexport.cat+" "+lexport.filename+".glare | psign -h 32 -cb 0 0 0 -cf 40 40 40 | pcompos glaretm"+str(frame)+".hdr 0 0 - 800 550 > glare"+str(frame)+".hdr", shell=True)
-                subprocess.call(lexport.rm+" glaretm"+str(frame)+".hdr", shell=True)                    
-                        
+                subprocess.call("pcond -u 300 glare{0}.hdr > glaretm{0}.hdr".format(frame), shell=True)
+                subprocess.call("{0} {1}.glare | psign -h 32 -cb 0 0 0 -cf 40 40 40 | pcompos glaretm{2}.hdr 0 0 - 800 550 > glare{2}.hdr" .format(lexport.cat, lexport.filename, frame), shell=True)
+                subprocess.call("{} glaretm{}.hdr".format(lexport.rm, frame), shell=True)                    
+                     
                 gfile={"name":"glare"+str(frame)+".hdr"}
                 gfiles.append(gfile)
 
-            if "glare0.hdr" in bpy.data.scenes["Scene"].sequence_editor.sequences_all:
-                bpy.ops.sequencer.delete()
-
-            bpy.ops.sequencer.image_strip_add( directory = lexport.newdir, \
+            try:
+                bpy.data.scenes['Scene'].sequence_editor.sequences_all["glare0.hdr"]
+                bpy.ops.sequencer.refresh_all()
+            except:
+                bpy.ops.sequencer.image_strip_add( directory = lexport.newdir, \
                     files = gfiles, \
                     frame_start=0, \
                     channel=2, \
                     filemode=9)
+                 
         else:
             calc_op.report({'ERROR'}, "There is no camera in the scene. Create one for glare analysis")
+        
         lexport.scene.livi_display_panel = 0
    
     def dayavail(self, lexport, calc_op):
@@ -216,7 +216,7 @@ class LiVi_c(object):
             for i in range(0, len(res[frame])):
                 h = 0.75*(1-(res[frame][i]-min(lexport.scene['resmin']))/(max(lexport.scene['resmax']) + 0.01 - min(lexport.scene['resmin'])))
                 rgb.append(colorsys.hsv_to_rgb(h, 1.0, 1.0))
-            cno = 0
+#            cno = 0
 
             for geo in self.scene.objects:
                 bpy.ops.object.select_all(action = 'DESELECT')
@@ -241,14 +241,13 @@ class LiVi_c(object):
                                         col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
                                         lcol_i.append(col_i)
                                         vertexColour.data[loop_index].color = rgb[col_i+mcol_i]
-                                    
+#                                    cno = cno + len(geo['cverts'])
+                                    mcol_i = len(list(set(lcol_i)))
+                                
                                 if self.scene['cp'] == 0:
                                     for loop_index in face.loop_indices:
                                         vertexColour.data[loop_index].color = rgb[f]
                                     f += 1
-                           
-                        cno = cno + len(geo['cverts'])
-                        mcol_i = len(list(set(lcol_i)))   
         
                 except Exception as e:
                     print(e)

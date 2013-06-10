@@ -285,7 +285,7 @@ class SCENE_LiVi_Calc_UI(bpy.types.Panel):
                 if lexport.metric == "4" and lexport.scene.livi_export_time_type == "1":
                     if  scene.livi_export_epw_name.split(".")[-1] in ("hdr"):
                         row = layout.row()
-                        row.operator(SCENE_LiVi_VEC_Select.bl_idname, text="Select VEC File")
+                        row.operator(SCENE_LiVi_VEC_Select.bl_idname, text="Select MTX File")
                         row.prop(scene, "livi_calc_mtx_name")
                     row = layout.row()
                     row.label(text = 'DA Occupancy:')
