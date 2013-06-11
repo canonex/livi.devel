@@ -29,11 +29,8 @@ class LiVi_d(livi_export.LiVi_e):
         except:
             self.scene['livi_disp_3d'] = 0
         self.clearscened()
-        print("1")
         self.rad_display()
-        print("2")
         self.rp_display = True
-        print("3")
             
     def rad_display(self):
         if len(bpy.app.handlers.frame_change_pre) == 0:
