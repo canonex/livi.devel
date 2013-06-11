@@ -188,12 +188,8 @@ class LiVi_e(LiVi_bc):
     
     def clearscened(self):    
         for ob in [ob for ob in self.scene.objects if ob.type == 'MESH']:
-            try:
-                if ob['res'] == 1:
-                   self.scene.objects.unlink(ob)
-            except Exception as e:
-                if str(e) != '\'bpy_struct[key]: key "res" not found\'':
-                    print(e, '\'bpy_struct[key]: key "res" not found\'')
+            if ob.livi_res == 1:
+                self.scene.objects.unlink(ob)
        
         for mesh in bpy.data.meshes:
             if mesh.users == 0:
@@ -513,7 +509,7 @@ class LiVi_e(LiVi_bc):
                         vertices = face.vertices[:]
                         rad_poly.write("# Polygon \n{} polygon poly_{}_{}\n0\n0\n{}\n".format(o.data.materials[face.material_index].name.replace(" ", "_"), o.data.name.replace(" ", "_"), face.index, 3*len(face.vertices)))                   
                         try:
-                            if o.data.shape_keys.key_blocks[0] and o.data.shape_keys.key_blocks[1]:
+                            if o.data.shape_keys and o.data.shape_keys.key_blocks[0] and o.data.shape_keys.key_blocks[1]:
                                 for vertindex in vertices:
                                     sk0 = o.data.shape_keys.key_blocks[0]
                                     sk0co = geomatrix*sk0.data[vertindex].co
