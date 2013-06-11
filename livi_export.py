@@ -54,7 +54,7 @@ class LiVi_bc(object):
         self.scene['newdir'] = self.newdir
         
 class LiVi_e(LiVi_bc):
-    '''General settings class for LiVi'''
+    '''Export settings class for LiVi'''
     def __init__(self, filepath, scene, sd, tz, export_op):
         LiVi_bc.__init__(self, filepath, scene)
         self.simtimes = []
@@ -492,11 +492,6 @@ class LiVi_e(LiVi_bc):
         rad_poly = open(self.poly(frame), 'w')
         bpy.ops.object.select_all(action='DESELECT')
         for o in obs:
-            try:
-                o['merr']
-            except:
-                o['merr'] = 0
-                
             o.select = True
             bpy.ops.export_scene.obj(filepath=self.obj(o.name, frame), check_existing=True, filter_glob="*.obj;*.mtl", use_selection=True, use_animation=False, use_mesh_modifiers=True, use_edges=False, use_normals=o.data.polygons[0].use_smooth, use_uvs=True, use_materials=True, use_triangles=True, use_nurbs=True, use_vertex_groups=True, use_blen_objects=True, group_by_object=False, group_by_material=False, keep_vertex_order=False, global_scale=1.0, axis_forward='Y', axis_up='Z', path_mode='AUTO')
             o.select = False
@@ -504,14 +499,14 @@ class LiVi_e(LiVi_bc):
             objrun = Popen(objcmd, shell = True, stderr = PIPE)
             for line in objrun.stderr:
                 if 'fatal' in str(line):
-                    o['merr'] = 1
+                    o.livi_merr = 1
 
-            if o['merr'] == 0:
+            if o.livi_merr == 0:
                 rad_poly.write("void mesh id \n1 "+self.mesh(o.name, frame)+"\n0\n0\n\n")
     
             else:
                 export_op.report({'INFO'}, o.name+" could not be converted into a Radiance mesh and simpler export routine has been used. No un-applied object modifiers will be exported.")
-                o['merr'] = 0
+                o.livi_merr = 0
                 geomatrix = o.matrix_world
                 for face in o.data.polygons:
                     try:
@@ -539,10 +534,6 @@ class LiVi_e(LiVi_bc):
         rad_poly = open(self.poly(frame), 'w')
         for o in obs:
             if frame == 0:
-                try:
-                    o['merr']
-                except:
-                    o['merr'] = 0
                 o.select = True
                 bpy.ops.export_scene.obj(filepath=self.obj(o.name, frame), check_existing=True, filter_glob="*.obj;*.mtl", use_selection=True, use_animation=False, use_mesh_modifiers=True, use_edges=False, use_normals=o.data.polygons[0].use_smooth, use_uvs=True, use_materials=True, use_triangles=True, use_nurbs=True, use_vertex_groups=True, use_blen_objects=True, group_by_object=False, group_by_material=False, keep_vertex_order=False, global_scale=1.0, axis_forward='Y', axis_up='Z', path_mode='AUTO')
                 o.select = False
@@ -552,12 +543,12 @@ class LiVi_e(LiVi_bc):
         
             for line in objrun.stderr:
                 if 'fatal' in str(line):
-                    o['merr'] = 1
+                    o.livi_merr = 1
        
-            if o['merr'] == 0 and ob == 0:
+            if o.livi_merr == 0 and ob == 0:
                 rad_poly.write("void mesh id \n1 "+self.mesh(o.name, frame)+"\n0\n0\n")
         
-            elif o['merr'] == 1:        
+            elif o.livi_merr == 1:        
                 if frame == 0:
                     for geo in obs:
                         geomatrix = geo.matrix_world

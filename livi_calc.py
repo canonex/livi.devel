@@ -195,6 +195,7 @@ class LiVi_c(object):
         self.resapply(res, lexport) 
         
     def resapply(self, res, lexport):
+        
         maxres = []
         minres = []
         avres = []
@@ -216,7 +217,6 @@ class LiVi_c(object):
             for i in range(0, len(res[frame])):
                 h = 0.75*(1-(res[frame][i]-min(lexport.scene['resmin']))/(max(lexport.scene['resmax']) + 0.01 - min(lexport.scene['resmin'])))
                 rgb.append(colorsys.hsv_to_rgb(h, 1.0, 1.0))
-#            cno = 0
 
             for geo in self.scene.objects:
                 bpy.ops.object.select_all(action = 'DESELECT')
@@ -235,18 +235,24 @@ class LiVi_c(object):
                     for face in geo.data.polygons:
                         if "calcsurf" in str(geo.data.materials[face.material_index].name):
                             if self.scene['cp'] == 1:
+                                cvtup = tuple(geo['cverts'])
                                 for loop_index in face.loop_indices:
                                     v = geo.data.loops[loop_index].vertex_index
-                                    col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
+#                                    col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
+#                                    print(col_i)
+                                    if v in cvtup:
+                                        col_i = cvtup.index(v) 
+#                                        print(col_i2)
+#                                    col_i = geo['cverts'].index(v)
                                     lcol_i.append(col_i)
                                     vertexColour.data[loop_index].color = rgb[col_i+mcol_i]
-#                                    cno = cno + len(geo['cverts'])
-                                mcol_i = len(list(set(lcol_i)))
-                            
+
                             if self.scene['cp'] == 0:
                                 for loop_index in face.loop_indices:
                                     vertexColour.data[loop_index].color = rgb[f]
                                 f += 1
+                        
+                    mcol_i = len(list(set(lcol_i)))
         
         lexport.scene.livi_display_panel = 1
         

@@ -302,6 +302,9 @@ def register():
     Object.livi_res = IntProperty(
             name="LiVi res object", description="Boolean for results object", default=0)
             
+    Object.livi_merr = IntProperty(
+            name="LiVi simple mesh export", description="Boolean for simple mesh export", default=0)
+            
 def unregister():
     bpy.utils.unregister_module(__name__)
 

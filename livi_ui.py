@@ -336,12 +336,6 @@ class SCENE_LiVi_Calculator(bpy.types.Operator):
     def invoke(self, context, event):
         global lcalc
         scene = context.scene
-        for geo in context.scene.objects:
-            try:
-                if geo['calc']:
-                    pass
-            except:
-                geo['calc'] = 0
         scene['metric'] = lexport.metric
         lcalc = livi_calc.LiVi_c(lexport, self)   
         scene['unit'] = lcalc.unit[int(scene['metric'])]
