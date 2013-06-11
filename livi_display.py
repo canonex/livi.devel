@@ -38,7 +38,7 @@ class LiVi_d(livi_export.LiVi_e):
     def rad_display(self):
         if len(bpy.app.handlers.frame_change_pre) == 0:
             bpy.app.handlers.frame_change_pre.append(livi_export.cyfc1)
-        j = 0 
+#        j = 0 
         o = 0
         self.obcalclist = []
         self.obreslist = []
@@ -50,7 +50,7 @@ class LiVi_d(livi_export.LiVi_e):
                     bpy.ops.object.mode_set(mode = 'OBJECT')
                 bpy.ops.object.select_all(action = 'DESELECT')
                 self.obcalclist.append(geo)
-                o = o + 1
+                o += 1
 
         for frame in range(0, self.scene.frame_end + 1):
             self.scene.frame_set(frame)
