@@ -24,10 +24,6 @@ from . import livi_export
 class LiVi_d(livi_export.LiVi_e):
     def __init__(self):
         self.scene = bpy.context.scene
-        try:
-            self.scene['livi_disp_3d'] = self.scene['livi_disp_3d']
-        except:
-            self.scene['livi_disp_3d'] = 0
         self.clearscened()
         self.rad_display()
         self.rp_display = True
@@ -35,7 +31,6 @@ class LiVi_d(livi_export.LiVi_e):
     def rad_display(self):
         if len(bpy.app.handlers.frame_change_pre) == 0:
             bpy.app.handlers.frame_change_pre.append(livi_export.cyfc1)
-#        j = 0 
         o = 0
         self.obcalclist = []
         self.obreslist = []
@@ -66,7 +61,7 @@ class LiVi_d(livi_export.LiVi_e):
         bpy.ops.object.select_all(action = 'DESELECT')
         self.scene.objects.active = None
         
-        if self.scene['livi_disp_3d'] == 1:
+        if self.scene.livi_disp_3d == 1:
             resvertco = []
             fextrude = []
             for i, geo in enumerate(self.scene.objects):
