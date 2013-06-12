@@ -44,7 +44,10 @@ BN2 4AT.
 
 
  Revision History:
+<<<<<<< local
+=======
  0.3 - Gendaymtx for sky matrix generation
+>>>>>>> other
  0.2.3 - Point results visualisation - (rgsouthall - 17/03/13)
  0.2.2 - Export polygons for mirror and light emitting radiance materials - (rgsouthall - 16/03/13)
  0.2.1 - Improved HDR background handling. Update to Blender 2.66 (rgsouthall - 26/02/13)
