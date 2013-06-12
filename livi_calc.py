@@ -30,20 +30,20 @@ class LiVi_c(object):
             if lexport.scene.livi_export_time_type == "0" or lexport.scene.livi_anim == "1":
                 self.simlistn = ("illumout", "irradout", "dfout")
                 self.simlist = (" |  rcalc  -e '$1=47.4*$1+120*$2+11.6*$3' ", " |  rcalc  -e '$1=$1' ", " |  rcalc  -e '$1=(47.4*$1+120*$2+11.6*$3)/100' ")
-                self.unit = ("Lux", "W/m^2", "DF %", "Glare")
+                self.unit = ("Lux", "W/m"+ u'\u00b2', "DF %", "Glare")
             else:
                 self.simlistn = ("cumillumout", "cumirradout", "", "", "daout")
                 self.simlist = (" |  rcalc  -e '$1=47.4*$1+120*$2+11.6*$3' ", " |  rcalc  -e '$1=$1' ")
-                self.unit = ("Luxhours", "Wh/m^2", "", "", "DA %")
+                self.unit = ("Luxhours", "Wh/m"+ u'\u00b2', "", "", "DA %")
         if str(sys.platform) == 'win32':
             if lexport.scene.livi_export_time_type == "0"  or lexport.scene.livi_anim == "1":
                 self.simlistn = ("illumout", "irradout", "dfout")
                 self.simlist = (' |  rcalc  -e "$1=47.4*$1+120*$2+11.6*$3" ', ' |  rcalc  -e "$1=$1" ', ' |  rcalc  -e "$1=(47.4*$1+120*$2+11.6*$3)/100" ')
-                self.unit = ("Lux", "W/m^2", "DF %", "Glare")
+                self.unit = ("Lux", "W/m"+ u'\u00b2', "DF %", "Glare")
             else:
                 self.simlistn = ("cumillumout", "cumirradout", "", "", "daout")
                 self.simlist = (' |  rcalc  -e "$1=47.4*$1+120*$2+11.6*$3" ', ' |  rcalc  -e "$1=$1" ')
-                self.unit = ("Luxhours", "Wh/m^2", "", "", "DA %")
+                self.unit = ("Luxhours", "Wh/m"+ u'\u00b2', "", "", "DA %")
         try:
             if os.lstat(lexport.filebase+".rtrace").st_size == 0:
                 if prev_op.name == "Radiance Preview":
