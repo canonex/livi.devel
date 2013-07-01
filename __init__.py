@@ -35,30 +35,32 @@ if "bpy" in locals():
 else:
     from io_livi_dev import livi_ui
 
-import bpy, os, sys, platform
+import bpy, os, sys, platform, inspect
 from bpy.props import BoolProperty, IntProperty, FloatProperty, EnumProperty, StringProperty
+
+addonpath = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
 if sys.platform == 'darwin':
     if platform.architecture() == "64bit":
-        os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi_dev/osx/64" 
+        os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:{}/osx/64".format(addonpath)
     else:
-         os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi_dev/osx"
-    os.environ["RAYPATH"] = "/usr/local/radiance/lib:"+sys.path[0]+"/io_livi_dev/lib"
+         os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:{}/osx".format(addonpath)
+    os.environ["RAYPATH"] = "/usr/local/radiance/lib:{}/lib".format(addonpath)
 
 elif sys.platform == 'win32':
     if os.path.isdir(r"C:\Program Files (x86)\Radiance"):
-        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files (x86)\Radiance\bin;"+sys.path[0]+"\io_livi_dev\windows" 
-        os.environ["RAYPATH"] = r"C:\Program Files (x86)\Radiance\lib;"+sys.path[0]+"\io_livi_dev\lib"
+        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files (x86)\Radiance\bin;{}\windows".format(addonpath) 
+        os.environ["RAYPATH"] = r"C:\Program Files (x86)\Radiance\lib;{}\lib".format(addonpath)
     elif os.path.isdir(r"C:\Program Files\Radiance"):
-        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files\Radiance\bin;"+sys.path[0]+"\io_livi_dev\windows" 
-        os.environ["RAYPATH"] = "C:\Program Files\Radiance\lib;"+sys.path[0]+"\io_livi_dev\lib"
+        os.environ["PATH"] = os.environ["PATH"] + r";C:\Program Files\Radiance\bin;{}\windows".format(addonpath)
+        os.environ["RAYPATH"] = "C:\Program Files\Radiance\lib;{}\lib".format(addonpath)
     else:
         print("Cannot find a valid Radiance directory. Please check that you have Radiance installed in either C:\Program Files(x86) (64bit windows) \
 or C:\Program Files (32bit windows)")
               
 elif sys.platform == 'linux':
-    os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:"+sys.path[0]+"/io_livi_dev/linux"
-    os.environ["RAYPATH"] = "/usr/local/radiance/lib:"+sys.path[0]+"/io_livi_dev/lib"
+    os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:{}/linux".format(addonpath)
+    os.environ["RAYPATH"] = "/usr/local/radiance/lib:{}/lib".format(addonpath)
 
 def register():
     bpy.utils.register_module(__name__)
@@ -88,8 +90,8 @@ def register():
             items=[("0", "None", "export for a static scene"),
                    ("1", "Time", "export for a period of time"),
                     ("2", "Geometry", "export for Dynamic Daylight Simulation"),
-                    ("3", "Material", "export for Dynamic Daylight Simulation"),
-                    ("4", "Lights", "export for Dynamic Daylight Simulation"),],
+                    ("3", "Material", "export for dynamic material simulation"),
+                    ("4", "Lights", "export for artificial light simulation"),],
             name="", description="Specify the animation type", default="0")
     
     Scene.livi_export_time_type = EnumProperty(
@@ -108,12 +110,6 @@ def register():
                    ("1", "Vertices", "export vertices for calculation points"), ],
             name="", description="Specify the calculation point geometry", default="1")
             
-#    Scene.livi_export_geo_export = EnumProperty(
-#            items=[("0", "Static", "Static geometry export"),
-#                   ("1", "Dynamic", "Dynamic geometry export"), ],
-#            name="", description="Specify the type of geometry to act as calculation points",
-#            default="0")
-    
     Scene.livi_export_sky_type = EnumProperty(
             items=[
                    ("0", "Sunny", "CIE Sunny Sky description"),
