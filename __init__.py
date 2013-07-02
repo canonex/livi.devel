@@ -117,7 +117,8 @@ def register():
                    ("2", "Coudy", "CIE Partly Cloudy Sky description"),
                    ("3", "DF Sky", "Daylight Factor Sky description"),
                    ("4", "HDR Sky", "HDR file sky"),
-                   ("5", "None", "No Sky"),],
+                   ("5", "Radiance Sky", "Radiance file sky"),
+                   ("6", "None", "No Sky"),],
             name="", description="Specify the type of sky for the simulation", default="0")
     
     Scene.livi_export_sky_type_period = EnumProperty(
@@ -219,7 +220,9 @@ def register():
             
     Scene.livi_export_hdr_name = StringProperty(
             name="", description="Name of the HDR angmap file", default="")
-            
+    
+    Scene.livi_export_rad_name = StringProperty(
+        name="", description="Name of the radiance sky file", default="")        
 # LiVi Calculation panel ui elements
 
     Scene.livi_metric = EnumProperty(

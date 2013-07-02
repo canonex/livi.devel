@@ -105,6 +105,10 @@ class LiVi_e(LiVi_bc):
             self.skyhdrexport(self.scene.livi_export_hdr_name)
         
         elif self.sky_type == 5:
+            subprocess.call("cp {} {}".format(self.scene.livi_export_rad_name, self.sky(0)), shell = True)
+#            self.skyhdrexport(self.scene.livi_export_rad_name)
+        
+        elif self.sky_type == 6:
             for frame in range(0, self.fe + 1):
                 rad_sky = open(self.sky(frame), "w")
                 rad_sky.close()
