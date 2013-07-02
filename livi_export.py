@@ -106,7 +106,6 @@ class LiVi_e(LiVi_bc):
         
         elif self.sky_type == 5:
             subprocess.call("cp {} {}".format(self.scene.livi_export_rad_name, self.sky(0)), shell = True)
-#            self.skyhdrexport(self.scene.livi_export_rad_name)
         
         elif self.sky_type == 6:
             for frame in range(0, self.fe + 1):
@@ -120,15 +119,13 @@ class LiVi_e(LiVi_bc):
         for frame in range(0, self.fe + 1):
             if scene.livi_anim == "4":
                 self.radlights(frame)
-            else:
-                if frame == 0:
-                    self.radlights(frame)
+            elif frame == 0:
+                self.radlights(frame)
             
             if scene.livi_anim == "3":
                 self.radmat(frame, export_op)
-            else:
-                if frame == 0:
-                    self.radmat(frame, export_op)
+            elif frame == 0:
+                self.radmat(frame, export_op)
         
         self.rtexport(export_op)
         
@@ -137,11 +134,10 @@ class LiVi_e(LiVi_bc):
                 self.merr = 0
                 if scene.livi_anim == "2":
                     self.obexport(frame, [geo for geo in self.scene.objects if geo.type == 'MESH' and 'lightarray' not in geo.name and geo.hide == False and geo.layers[0] == True], 0, export_op) 
-                if scene.livi_anim == "3":
+                elif scene.livi_anim == "3":
                     self.obmexport(frame, [geo for geo in self.scene.objects if geo.type == 'MESH' and 'lightarray' not in geo.name and geo.hide == False and geo.layers[0] == True], 0, export_op) 
-                else:
-                    if frame == 0:
-                        self.obexport(frame, [geo for geo in self.scene.objects if geo.type == 'MESH' and 'lightarray' not in geo.name and geo.hide == False and geo.layers[0] == True], 0, export_op)
+                elif frame == 0:
+                    self.obexport(frame, [geo for geo in self.scene.objects if geo.type == 'MESH' and 'lightarray' not in geo.name and geo.hide == False and geo.layers[0] == True], 0, export_op)
             
                 self.fexport(frame, export_op)
         
@@ -241,10 +237,7 @@ class LiVi_e(LiVi_bc):
         for frame in range(0, self.frameend + 1):
             simtime = self.starttime + frame*datetime.timedelta(seconds = 3600*self.scene.livi_export_interval)
             deg2rad = 2*math.pi/360
-            if self.scene.livi_export_summer_enable:
-                DS = 1 
-            else:
-                DS = 0
+            DS = 1 if self.scene.livi_export_summer_enable else 0
             ([solalt, solazi]) = solarPosition(simtime.timetuple()[7], simtime.hour - DS + (simtime.minute)*0.016666, self.scene.livi_export_latitude, self.scene.livi_export_longitude) 
             if self.sky_type < 2:
                 if frame == 0:
@@ -314,10 +307,8 @@ class LiVi_e(LiVi_bc):
             else:
                 bpy.data.worlds['World'].texture_slots[0].texture.image.source = 'SEQUENCE'
             
-            if self.scene.livi_export_time_type == "0":
-                self.scene.world.ambient_color = (0.04, 0.04, 0.04)
-            else:
-                self.scene.world.ambient_color = (0.000001, 0.000001, 0.000001)
+            self.scene.world.ambient_color = (0.04, 0.04, 0.04) if self.scene.livi_export_time_type == "0" else (0.000001, 0.000001, 0.000001)
+                
             bpy.data.worlds['World'].texture_slots[0].texture.factor_red = (0.05, 0.000001)[int(self.scene.livi_export_time_type)]
             bpy.data.worlds['World'].texture_slots[0].texture.factor_green = (0.05, 0.000001)[int(self.scene.livi_export_time_type)]
             bpy.data.worlds['World'].texture_slots[0].texture.factor_blue = (0.05, 0.000001)[int(self.scene.livi_export_time_type)]
@@ -376,10 +367,7 @@ class LiVi_e(LiVi_bc):
                 
     def skyexport(self, rad_sky):
         rad_sky.write("\nskyfunc glow skyglow\n0\n0\n")
-        if self.sky_type < 3:
-            rad_sky.write("4 .8 .8 1 0\n\n")
-        else:
-            rad_sky.write("4 1 1 1 0\n\n")    
+        rad_sky.write("4 .8 .8 1 0\n\n") if self.sky_type < 3 else rad_sky.write("4 1 1 1 0\n\n") 
         rad_sky.write("skyglow source sky\n0\n0\n4 0 0 1  180\n\n")
         rad_sky.write("skyfunc glow groundglow\n0\n0\n4 .8 1.1 .8  0\n\n")
         rad_sky.write("groundglow source ground\n0\n0\n4 0 0 -1  180\n\n")
