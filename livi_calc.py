@@ -195,7 +195,6 @@ class LiVi_c(object):
         self.resapply(res, lexport) 
         
     def resapply(self, res, lexport):
-        
         maxres = []
         minres = []
         avres = []
