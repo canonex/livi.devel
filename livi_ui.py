@@ -75,8 +75,13 @@ class SCENE_LiVi_Export_UI(bpy.types.Panel):
                     
                 elif sky_type == 4:
                     row = layout.row()
-                    row.operator(SCENE_LiVi_HDR_Select.bl_idname, text="Select HDR File")
+                    row.operator(SCENE_LiVi_HDR_Select.bl_idname, text="Select HDR file")
                     row.prop(scene, "livi_export_hdr_name")
+                    
+                elif sky_type == 5: 
+                    row = layout.row()
+                    row.operator(SCENE_LiVi_RAD_Select.bl_idname, text="Select Radiance sky file")
+                    row.prop(scene, "livi_export_rad_name")
             else:
                 row = layout.row()
                 row.operator(SCENE_LiVi_EPW_Select.bl_idname, text="Select EPW File")
@@ -147,7 +152,32 @@ class SCENE_LiVi_HDR_Select(bpy.types.Operator, io_utils.ImportHelper):
     def invoke(self,context,event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
-    
+
+class SCENE_LiVi_RAD_Select(bpy.types.Operator, io_utils.ImportHelper):
+    bl_idname = "scene.livi_rad_select"
+    bl_label = "Select radiance sky file"
+    bl_description = "Select the Radiance format sky file"
+    filename = ""
+    filename_ext = ".rad"
+    filter_glob = bpy.props.StringProperty(default="*.rad", options={'HIDDEN'})
+    bl_register = True
+    bl_undo = True
+
+    def draw(self,context):
+        layout = self.layout
+        row = layout.row()
+        row.label(text="Import a Radiance sky with the file browser", icon='WORLD_DATA')
+         
+    def execute(self, context):
+        scene = context.scene
+        scene.livi_export_rad_name = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+        
+        
 class SCENE_LiVi_EPW_Select(bpy.types.Operator, io_utils.ImportHelper):
     bl_idname = "scene.livi_epw_select"
     bl_label = "Select EPW file"
