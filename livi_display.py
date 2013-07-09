@@ -36,7 +36,7 @@ class LiVi_d(livi_export.LiVi_e):
         self.obreslist = []
         
         for geo in self.scene.objects:
-            if geo.type == "Mesh" and geo.livi_calc == 1:
+            if geo.type == "MESH" and geo.livi_calc == 1:
                 geo.select = True
                 if geo.mode != 'OBJECT':
                     bpy.ops.object.mode_set(mode = 'OBJECT')

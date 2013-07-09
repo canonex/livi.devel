@@ -67,6 +67,8 @@ class LiVi_e(LiVi_bc):
         self.time_type = int(scene.livi_export_time_type)
         self.merr = 0
         self.rtrace = self.filebase+".rtrace"
+        self.metric = ""
+        
         for a in bpy.app.handlers.frame_change_pre:
             bpy.app.handlers.frame_change_pre.remove(a)
   
@@ -149,15 +151,15 @@ class LiVi_e(LiVi_bc):
      
     def obj(self, name, fr):
         if self.scene.livi_anim == "2":
-            return(self.filebase+"-{}-{}.obj".format(name, fr))
+            return(self.filebase+"-{}-{}.obj".format(name.replace(" ", "_"), fr))
         else:
-            return(self.filebase+"-{}-0.obj".format(name))
+            return(self.filebase+"-{}-0.obj".format(name.replace(" ", "_")))
     
     def mesh(self, name, fr):
         if self.scene.livi_anim in ("2", "3"):
-            return(self.filebase+"-{}-{}.mesh".format(name, fr))
+            return(self.filebase+"-{}-{}.mesh".format(name.replace(" ", "_"), fr))
         else:
-            return(self.filebase+"-{}-0.mesh".format(name))
+            return(self.filebase+"-{}-0.mesh".format(name.replace(" ", "_")))
     
     def mat(self, fr):
         if self.scene.livi_anim == "3":
