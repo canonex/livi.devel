@@ -22,14 +22,6 @@ from math import sin, cos, acos, asin, pi
 from mathutils import Vector
 from subprocess import PIPE, Popen
 
-try:
-    import numpy as numpy
-    np = 1
-except:
-    np = 0
-
-nproc = multiprocessing.cpu_count()
-
 class LiVi_bc(object):
     '''Base settings class for LiVi'''
     def __init__(self, filepath, scene):
@@ -38,7 +30,7 @@ class LiVi_bc(object):
             self.rm = "rm "
             self.cat = "cat "
             self.fold = "/"
-        elif str(sys.platform) == 'win32':
+        else:
             self.nproc = "1"
             self.rm = "del "
             self.cat = "type "
@@ -52,7 +44,12 @@ class LiVi_bc(object):
         self.filebase = self.newdir+self.fold+self.filename
         self.scene = scene
         self.scene['newdir'] = self.newdir
-        
+        try:
+            import numpy as numpy
+            self.np = 1
+        except:
+            self.np = 0
+            
 class LiVi_e(LiVi_bc):
     '''Export settings class for LiVi'''
     def __init__(self, filepath, scene, sd, tz, export_op):
@@ -85,12 +82,12 @@ class LiVi_e(LiVi_bc):
             self.sky_type = int(scene.livi_export_sky_type_period)
             self.starttime = datetime.datetime(2010, int(scene.livi_export_start_month), int(scene.livi_export_start_day), int(scene.livi_export_start_hour), 0)
             self.endtime = datetime.datetime(2010, int(scene.livi_export_end_month), int(scene.livi_export_end_day), int(scene.livi_export_end_hour), 0)
-            self.hours = (self.endtime-self.starttime).seconds/3600
+            self.hours = (self.endtime-self.starttime).days*24 + (self.endtime-self.starttime).seconds/3600
             scene.frame_start = 0
             scene.frame_end = int(self.hours/scene.livi_export_interval)
             self.fe = int(self.hours/scene.livi_export_interval)
             self.frameend = int(self.hours/scene.livi_export_interval)
-        
+            
         elif scene.livi_anim in ("2", "3", "4"):
             self.fe = scene.frame_end
             self.frameend = 0
@@ -106,7 +103,7 @@ class LiVi_e(LiVi_bc):
         elif self.sky_type == 4:
             self.skyhdrexport(self.scene.livi_export_hdr_name)
         
-        elif self.sky_type == 5:
+        elif self.sky_type == 5 and self.scene.livi_export_time_type == "0":
             subprocess.call("cp {} {}".format(self.scene.livi_export_rad_name, self.sky(0)), shell = True)
         
         elif self.sky_type == 6:
@@ -232,7 +229,7 @@ class LiVi_e(LiVi_bc):
             subprocess.call("gensky {} {} {}:{:0>2d}{} -a {} -o {} {} > {}".format(simtime.month, simtime.day, simtime.hour, simtime.minute, self.TZ, self.scene.livi_export_latitude, self.scene.livi_export_longitude, self.skytypeparams, self.sky(frame)), shell = True)
             self.skyexport(open(self.sky(frame), "a"))           
             subprocess.call("oconv {} > {}-{}sky.oct".format(self.sky(frame), self.filebase, frame), shell=True)
-            subprocess.call("cnt 250 500 | rcalc -f {}/io_livi_dev/lib/latlong.cal -e 'XD=500;YD=250;inXD=0.002;inYD=0.004' | rtrace -af pan.af -n {} -x 500 -y 250 -fac {}-{}sky.oct > {}/{}p.hdr".format(self.scene.livipath, nproc, self.filebase, frame, self.newdir, frame), shell=True)
+            subprocess.call("cnt 250 500 | rcalc -f {}/io_livi_dev/lib/latlong.cal -e 'XD=500;YD=250;inXD=0.002;inYD=0.004' | rtrace -af pan.af -n {} -x 500 -y 250 -fac {}-{}sky.oct > {}/{}p.hdr".format(self.scene.livipath, self.nproc, self.filebase, frame, self.newdir, frame), shell=True)
             subprocess.call("rpict -vta -vp 0 0 0 -vd 1 0 0 -vu 0 0 1 -vh 360 -vv 360 -x 1000 -y 1000 {}-{}sky.oct > {}/{}.hdr".format(self.filebase, frame, self.newdir, frame), shell=True)
                 
     def sunexport(self):
@@ -396,7 +393,7 @@ class LiVi_e(LiVi_bc):
             patch = 0
             hour = 0
             fwd = datetime.datetime(int(epwyear), 1, 1).weekday()
-            if np == 0:
+            if self.np == 0:
                 self.vecvals = [[x%24, (fwd+x)%7] + [0 for p in range(146)] for x in range(0,8760)]
                 vals = [0 for x in range(146)]
             else:
@@ -423,7 +420,7 @@ class LiVi_e(LiVi_bc):
             skyrad.write("void glow sky_glow \n0 \n0 \n4 1 1 1 0 \nsky_glow source sky \n0 \n0 \n4 0 0 1 180 \nvoid glow ground_glow \n0 \n0 \n4 1 1 1 0 \nground_glow source ground \n0 \n0 \n4 0 0 -1 180\n\n")
             skyrad.close()
             subprocess.call("oconv {0}.whitesky > {0}-whitesky.oct".format(self.filename), shell=True)
-            subprocess.call("vwrays -ff -x 600 -y 600 -vta -vp 0 0 0 -vd 1 0 0 -vu 0 0 1 -vh 360 -vv 360 -vo 0 -va 0 -vs 0 -vl 0 | rcontrib -bn 146 -fo -ab 0 -ad 512 -n "+self.nproc+" -ffc -x 600 -y 600 -ld- -V+ -f tregenza.cal -b tbin -o p%d.hdr -m sky_glow "+self.filename+"-whitesky.oct", shell = True)
+            subprocess.call("vwrays -ff -x 600 -y 600 -vta -vp 0 0 0 -vd 1 0 0 -vu 0 0 1 -vh 360 -vv 360 -vo 0 -va 0 -vs 0 -vl 0 | rcontrib -bn 146 -fo -ab 0 -ad 512 -n {} -ffc -x 600 -y 600 -ld- -V+ -f tregenza.cal -b tbin -o p%d.hdr -m sky_glow {}-whitesky.oct".format(self.nproc, self.filename), shell = True)
             
             for j in range(0, 146):
                 subprocess.call("pcomb -s {0} p{1}.hdr > ps{1}.hdr".format(vals[j], j), shell = True)
@@ -516,7 +513,6 @@ class LiVi_e(LiVi_bc):
                         rad_poly.write("\n")
                     except:
                         export_op.report({'ERROR'},"Make sure your object "+o.name+" has an associated material")
-            
         rad_poly.close()
 
     def obmexport(self, frame, obs, ob, export_op):
@@ -560,7 +556,6 @@ class LiVi_e(LiVi_bc):
                                 rad_poly.write("\n")
                             except:
                                 export_op.report({'ERROR'},"Make sure your object "+geo.name+" has an associated material")
-                            
         rad_poly.close()
         
     def radlights(self, frame):
@@ -639,20 +634,19 @@ class LiVi_e(LiVi_bc):
                                 elif self.scene['cp'] == 0:
                                     geo['cfaces'] = csf
                                     self.reslen = len(calcsurffaces)
+                        bpy.data.meshes.remove(mesh)
                     else:
                         geo.livi_calc = 0
                         for mat in geo.material_slots:
                             mat.material.use_transparent_shadows = True
 
             rtrace.close()    
-            bpy.data.meshes.remove(mesh)
             self.export = 1
         else:
             self.export = 0
             for geo in self.scene.objects:
-                if geo.type == 'MESH' and geo.name != 'lightarray' and geo.hide == False and geo.layers[0] == True:
-                    if not geo.data.materials:
-                        export_op.report({'ERROR'},"Make sure your object "+geo.name+" has an associated material") 
+                if geo.type == 'MESH' and geo.name != 'lightarray' and geo.hide == False and geo.layers[0] == True and not geo.data.materials:
+                    export_op.report({'ERROR'},"Make sure your object "+geo.name+" has an associated material") 
     
     def fexport(self, frame, export_op):
         try:
@@ -692,10 +686,7 @@ def solarPosition(doy, lst, lat, lon):
     phi = acos((sin(beta) * sin(l) - sin(delta))/(cos(beta) * cos(l)))                                                                         
     #Convert altitude and azimuth from radians to degrees, since the Spatial Analyst's Hillshade function inputs solar angles in degrees
     altitude = radToDeg*beta
-    if ast<=12:
-        azimuth = radToDeg*phi
-    else:
-        azimuth = 360 - radToDeg*phi
+    azimuth = radToDeg*phi if ast<=12 else 360 - radToDeg*phi
     return([altitude, azimuth])         
     
 def negneg(x):
