@@ -40,12 +40,11 @@ class SCENE_LiVi_Export_UI(bpy.types.Panel):
             col = row.column()
             col.label(text = 'Period Type:')
             row.prop(scene, "livi_export_time_type")
-        
+            
             if scene.livi_export_time_type == "0":
                 row = layout.row()
                 col = row.column()
                 col.label(text = 'Sky type:')
-               
                 row.prop(scene, "livi_export_sky_type")
                 sky_type = int(scene.livi_export_sky_type)
                
@@ -55,15 +54,9 @@ class SCENE_LiVi_Export_UI(bpy.types.Panel):
                     row.prop(scene, "livi_export_longitude")
                     row = layout.row()
                     row.prop(scene, "livi_export_summer_enable")
-                    if scene.livi_export_summer_enable:
-                        row.prop(scene, "livi_export_summer_meridian")
-                    else:
-                        row.prop(scene, "livi_export_standard_meridian")
+                    row.prop(scene, "livi_export_summer_meridian") if scene.livi_export_summer_enable else row.prop(scene, "livi_export_standard_meridian")
                     row = layout.row()
-                    if int(scene.livi_anim) != "1":
-                        row.label(text = 'Time:')
-                    else:
-                        row.label(text = 'Start:')
+                    row.label(text = 'Time:') if int(scene.livi_anim) != "1" else row.label(text = 'Start:')
                     row.prop(scene, "livi_export_start_hour")
                     if scene.livi_export_start_month == "2":
                         row.prop(scene, "livi_export_start_day28")
@@ -111,8 +104,8 @@ class SCENE_LiVi_Export_UI(bpy.types.Panel):
                 row.prop(scene, "livi_export_end_day30")
             else:
                 row.prop(scene, "livi_export_end_day")
-            row.prop(scene, "livi_export_end_month")    
             
+            row.prop(scene, "livi_export_end_month")    
             row = layout.row()
             row.label(text = 'Interval (Hours)')
             row.prop(scene, "livi_export_interval")
@@ -246,11 +239,7 @@ class SCENE_LiVi_Export(bpy.types.Operator, io_utils.ExportHelper):
         if bpy.data.filepath:
             scene = context.scene
             if scene.livi_export_time_type == "0" or scene.livi_anim == "1":
-                if scene.livi_anim == "1":
-                    scene['skytype'] = int(scene.livi_export_sky_type_period)
-                else:
-                    scene['skytype'] = int(scene.livi_export_sky_type)
-                
+                scene['skytype'] = int(scene.livi_export_sky_type_period) if scene.livi_anim == "1" else int(scene.livi_export_sky_type)
                 if scene.livi_export_start_month == 2:
                     startD = scene.livi_export_start_day28
                 elif scene.livi_export_start_month in (4, 6, 9, 11):
@@ -501,10 +490,7 @@ class IES_Select(bpy.types.Operator, io_utils.ImportHelper):
          
     def execute(self, context):
         lamp = bpy.context.active_object
-        if " " not in self.filepath:
-            lamp['ies_name'] = self.filepath
-        else:
-            self.report({'ERROR'}, "There is a space either in the IES filename or its directory location. Remove this space and retry opening the file.")
+        lamp['ies_name'] = self.filepath if " " not in self.filepath else self.report({'ERROR'}, "There is a space either in the IES filename or directory location. Rename or move the file.")
         return {'FINISHED'}
 
     def invoke(self,context,event):

@@ -20,8 +20,6 @@ import bpy, os, subprocess, colorsys, multiprocessing, sys, math, datetime
 from math import pi
 from subprocess import PIPE, Popen, STDOUT
 
-nproc = multiprocessing.cpu_count()
-
 class LiVi_c(object):  
     def __init__(self, lexport, prev_op):
         self.acc = lexport.scene.livi_calc_acc
@@ -70,7 +68,7 @@ class LiVi_c(object):
             if cam != None:
                 cang = cam.data.angle*180/pi
                 vv = cang * lexport.scene.render.resolution_y/lexport.scene.render.resolution_x
-                subprocess.call("rvu -o qt -n {0} -vv {1:.3f} -vh {2:.3f} -vd {3[0][2]:.3f} {3[1][2]:.3f} {3[2][2]:.3f} -vp {4[0]:.3f} {4[1]:.3f} {4[2]:.3f} {5} {6}-{7}.oct &".format(nproc, vv, cang, -1*cam.matrix_world, cam.location, lexport.pparams(lexport.scene.livi_calc_acc), lexport.filebase, lexport.scene.frame_current), shell = True)
+                subprocess.call("rvu -o qt -n {0} -vv {1:.3f} -vh {2:.3f} -vd {3[0][2]:.3f} {3[1][2]:.3f} {3[2][2]:.3f} -vp {4[0]:.3f} {4[1]:.3f} {4[2]:.3f} {5} {6}-{7}.oct &".format(lexport.nproc, vv, cang, -1*cam.matrix_world, cam.location, lexport.pparams(lexport.scene.livi_calc_acc), lexport.filebase, lexport.scene.frame_current), shell = True)
             else:
                 prev_op.report({'ERROR'}, "There is no camera in the scene. Radiance preview will not work")
         else:
@@ -82,7 +80,7 @@ class LiVi_c(object):
         for frame in range(0, bpy.context.scene.frame_end+1):
             if os.path.isfile("{}-{}.af".format(lexport.filebase, frame)):
                 subprocess.call("{} {}-{}.af".format(lexport.rm, lexport.filebase, frame), shell=True)
-            rtcmd = "rtrace -n {0} -w {1} -h -ov -I -af {2}-{3}.af {2}-{3}.oct  < {2}.rtrace {4}".format(nproc, lexport.sparams(self.acc), lexport.filebase, frame, self.simlist[int(lexport.metric)]) #+" | tee "+lexport.newdir+lexport.fold+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res" 
+            rtcmd = "rtrace -n {0} -w {1} -h -ov -I -af {2}-{3}.af {2}-{3}.oct  < {2}.rtrace {4}".format(lexport.nproc, lexport.sparams(self.acc), lexport.filebase, frame, self.simlist[int(lexport.metric)]) #+" | tee "+lexport.newdir+lexport.fold+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res" 
             rtrun = Popen(rtcmd, shell = True, stdout=PIPE, stderr=STDOUT)
             resfile = open(lexport.newdir+lexport.fold+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res", 'w')
             for line in rtrun.stdout:
