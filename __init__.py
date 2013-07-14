@@ -239,8 +239,8 @@ def register():
             name="", description="specify the lighting metric required", default="0")
     
     Scene.livi_metricdds = EnumProperty(
-            items=[("0", "Cumulative light exposure", "Cumulative luxhours"),
-                   ("1", "Cumulative radiation calculation", "kWh/m**2"),
+            items=[("0", "Annual light exposure", "Cumulative luxhours"),
+                   ("1", "Annual radiation exposure", "kWh/m**2"),
                    ("4", "Daylight availability", "Daylight availability"), ],
             name="", description="specify the lighting metric required", default="0")	
     
