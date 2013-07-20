@@ -22,6 +22,12 @@ from math import sin, cos, acos, asin, pi
 from mathutils import Vector
 from subprocess import PIPE, Popen
 
+try:
+    import numpy as numpy
+    np = 1
+except:
+    np = 0
+    
 class LiVi_bc(object):
     '''Base settings class for LiVi'''
     def __init__(self, filepath, scene):
@@ -44,11 +50,6 @@ class LiVi_bc(object):
         self.filebase = self.newdir+self.fold+self.filename
         self.scene = scene
         self.scene['newdir'] = self.newdir
-        try:
-            import numpy as numpy
-            self.np = 1
-        except:
-            self.np = 0
             
 class LiVi_e(LiVi_bc):
     '''Export settings class for LiVi'''
@@ -221,7 +222,6 @@ class LiVi_e(LiVi_bc):
             num = (("-ab", 2, 3, 4), ("-ad", 256, 1024, 4096), ("-ar", 128, 512, 1024), ("-as", 128, 512, 1024), ("-aa", 0.3, 0.15, 0.08), ("-dj", 0, 0.7, 1), ("-ds", 0, 0.5, 0.15), ("-dr", 1, 3, 5), ("-ss", 0, 2, 5), ("-st", 1, 0.75, 0.1), ("-lw", 0.05, 0.01, 0.002))
             return(" {0[0]} {1[0]} {0[1]} {1[1]} {0[2]} {1[2]} {0[3]} {1[3]} {0[4]} {1[4]} {0[5]} {1[5]} {0[6]} {1[6]} {0[7]} {1[7]} {0[8]} {1[8]} {0[9]} {1[9]} {0[10]} {1[10]} ".format([n[0] for n in num], [n[int(acc)+1] for n in num]))
         
-    
     def radskyhdrexport(self):
         for frame in range(0, self.frameend + 1):
             simtime = self.starttime + frame*datetime.timedelta(seconds = 3600*self.scene.livi_export_interval)
@@ -374,7 +374,9 @@ class LiVi_e(LiVi_bc):
         
     def ddsskyexport(self):
         os.chdir(self.newdir)
-        pcombfiles = "ps0.hdr ps1.hdr ps2.hdr ps3.hdr ps4.hdr ps5.hdr ps6.hdr ps7.hdr ps8.hdr ps9.hdr ps10.hdr ps11.hdr ps12.hdr ps13.hdr ps14.hdr ps15.hdr ps16.hdr ps17.hdr ps18.hdr ps19.hdr ps20.hdr ps21.hdr ps22.hdr ps23.hdr ps24.hdr ps25.hdr ps26.hdr ps27.hdr ps28.hdr ps29.hdr ps30.hdr ps31.hdr ps32.hdr ps33.hdr ps34.hdr ps35.hdr ps36.hdr ps37.hdr ps38.hdr ps39.hdr ps40.hdr ps41.hdr ps42.hdr ps43.hdr ps44.hdr ps45.hdr ps46.hdr ps47.hdr ps48.hdr ps49.hdr ps50.hdr ps51.hdr ps52.hdr ps53.hdr ps54.hdr ps55.hdr ps56.hdr ps57.hdr ps58.hdr ps59.hdr ps60.hdr ps61.hdr ps62.hdr ps63.hdr ps64.hdr ps65.hdr ps66.hdr ps67.hdr ps68.hdr ps69.hdr ps70.hdr ps71.hdr ps72.hdr ps73.hdr ps74.hdr ps75.hdr ps76.hdr ps77.hdr ps78.hdr ps79.hdr ps80.hdr ps81.hdr ps82.hdr ps83.hdr ps84.hdr ps85.hdr ps86.hdr ps87.hdr ps88.hdr ps89.hdr ps90.hdr ps91.hdr ps92.hdr ps93.hdr ps94.hdr ps95.hdr ps96.hdr ps97.hdr ps98.hdr ps99.hdr ps100.hdr ps101.hdr ps102.hdr ps103.hdr ps104.hdr ps105.hdr ps106.hdr ps107.hdr ps108.hdr ps109.hdr ps110.hdr ps111.hdr ps112.hdr ps113.hdr ps114.hdr ps115.hdr ps116.hdr ps117.hdr ps118.hdr ps119.hdr ps120.hdr ps121.hdr ps122.hdr ps123.hdr ps124.hdr ps125.hdr ps126.hdr ps127.hdr ps128.hdr ps129.hdr ps130.hdr ps131.hdr ps132.hdr ps133.hdr ps134.hdr ps135.hdr ps136.hdr ps137.hdr ps138.hdr ps139.hdr ps140.hdr ps141.hdr ps142.hdr ps143.hdr ps144.hdr ps145.hdr"
+        pcombfiles = ""
+        for i in range(0, 146):
+            pcombfiles = pcombfiles + "ps{}.hdr ".format(i)
         epwbase = os.path.splitext(os.path.basename(self.scene.livi_export_epw_name))
         if epwbase[1] in (".epw", ".EPW"):
             epw = open(self.scene.livi_export_epw_name, "r")
@@ -388,34 +390,41 @@ class LiVi_e(LiVi_bc):
                     wea.write("{0[1]} {0[2]} {0[3]} {0[14]} {0[15]} \n".format(epwline.split(",")))
                 wea.close()
             if not os.path.isfile(self.newdir+"/"+epwbase[0]+".mtx"):
+                print('genday')
                 subprocess.call("gendaymtx -r -90 -m 1 {0}.wea > {0}.mtx".format(self.newdir+"/"+epwbase[0]), shell=True) 
 
-            patch = 0
+            patch = 2
             hour = 0
             fwd = datetime.datetime(int(epwyear), 1, 1).weekday()
-            if self.np == 0:
+            if np == 0:
                 self.vecvals = [[x%24, (fwd+x)%7] + [0 for p in range(146)] for x in range(0,8760)]
                 vals = [0 for x in range(146)]
             else:
                 self.vecvals = numpy.array([[x%24, (fwd+x)%7] + [0 for p in range(146)] for x in range(0,8760)])
-                vals = numpy.array([0 for x in range(146)])
-            
-            mtx = open(self.newdir+"/"+epwbase[0]+".mtx", "r") 
-            for fvals in mtx.readlines():
-                linevals = fvals.split(" ")
-                if fvals != "\n" and math.isnan(float(linevals[0])) == False:
-                    sumvals = round(float(linevals[0]) +  float(linevals[1]) + float(linevals[2]), 2)
-                    if sumvals > 0:
-                        vals[patch] += sumvals
-                        self.vecvals[hour] = sumvals
-                    hour += 1
-                elif fvals != "\n" and math.isnan(float(linevals[0])) == True:
-                    hour += 1 
-                else:
-                    patch += 1
-                    hour = 0
+                vals = numpy.zeros((146))
 
-            mtx.close()       
+            mtx = open(self.newdir+"/"+epwbase[0]+".mtx", "r") 
+            mtxlines = mtx.readlines()
+            mtx.close()   
+            
+            for fvals in mtxlines:
+                linevals = fvals.split(" ")
+                try:
+                    sumvals = float(linevals[0]) +  float(linevals[1]) + float(linevals[2]) 
+                    if sumvals > 0:
+                        vals[patch - 2] += sumvals
+                        if np == 1:
+                            self.vecvals[hour,patch] = sumvals
+                        else:
+                            self.vecvals[hour][patch] = sumvals
+                    hour += 1
+                except:
+                    if fvals != "\n":
+                        hour += 1 
+                    else:
+                        patch += 1
+                        hour = 0
+                        
             skyrad = open(self.filename+".whitesky", "w")    
             skyrad.write("void glow sky_glow \n0 \n0 \n4 1 1 1 0 \nsky_glow source sky \n0 \n0 \n4 0 0 1 180 \nvoid glow ground_glow \n0 \n0 \n4 1 1 1 0 \nground_glow source ground \n0 \n0 \n4 0 0 -1 180\n\n")
             skyrad.close()
@@ -601,6 +610,7 @@ class LiVi_e(LiVi_bc):
                         
                         for face in mesh.polygons:
                             if "calcsurf" in str(mesh.materials[face.material_index].name):
+                                csf.append(face.index)
                                 geo.livi_calc = 1
                                 vsum = Vector((0, 0, 0))
                                 self.scene.objects.active = geo
@@ -608,15 +618,14 @@ class LiVi_e(LiVi_bc):
                                 bpy.ops.object.mode_set(mode = 'OBJECT')                        
                                 for vc in geo.data.vertex_colors:
                                     bpy.ops.mesh.vertex_color_remove()
-
+                                
                                 if self.scene['cp'] == 0:                            
                                     for v in face.vertices:
                                         vsum = mesh.vertices[v].co + vsum
                                     fc = vsum/len(face.vertices)
                                     rtrace.write('{0[0]} {0[1]} {0[2]} {1[0]} {1[1]} {1[2]} \n'.format(fc, face.normal[:]))
                                     calcsurffaces.append((o, face))
-                                    csf.append(face.index)
-                                
+                                    
                                 for vert in face.vertices:
                                     if (mesh.vertices[vert]) not in calcsurfverts:
                                         vcentx, vcenty, vcentz = mesh.vertices[vert].co[:]
@@ -629,6 +638,7 @@ class LiVi_e(LiVi_bc):
                                 
                                 if self.scene['cp'] == 1:        
                                     geo['cverts'] = cverts
+                                    geo['cfaces'] = csf
                                     self.reslen = len(calcsurfverts)
 
                                 elif self.scene['cp'] == 0:
@@ -641,7 +651,7 @@ class LiVi_e(LiVi_bc):
                             mat.material.use_transparent_shadows = True
 
             rtrace.close()    
-            self.export = 1
+            self.export = 1            
         else:
             self.export = 0
             for geo in self.scene.objects:

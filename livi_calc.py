@@ -16,14 +16,20 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-import bpy, os, subprocess, colorsys, multiprocessing, sys, math, datetime
+import bpy, os, subprocess, colorsys, sys, datetime
 from math import pi
 from subprocess import PIPE, Popen, STDOUT
-
+try:
+    import numpy
+    np = 1
+except:
+    np = 0
+    
 class LiVi_c(object):  
     def __init__(self, lexport, prev_op):
         self.acc = lexport.scene.livi_calc_acc
         self.scene = bpy.context.scene
+        
         if str(sys.platform) != 'win32':
             if lexport.scene.livi_export_time_type == "0" or lexport.scene.livi_anim == "1":
                 self.simlistn = ("illumout", "irradout", "dfout")
@@ -33,6 +39,7 @@ class LiVi_c(object):
                 self.simlistn = ("cumillumout", "cumirradout", "", "", "daout")
                 self.simlist = (" |  rcalc  -e '$1=47.4*$1+120*$2+11.6*$3' ", " |  rcalc  -e '$1=$1' ")
                 self.unit = ("Luxhours", "Wh/m"+ u'\u00b2', "", "", "DA %")
+        
         if str(sys.platform) == 'win32':
             if lexport.scene.livi_export_time_type == "0"  or lexport.scene.livi_anim == "1":
                 self.simlistn = ("illumout", "irradout", "dfout")
@@ -68,7 +75,7 @@ class LiVi_c(object):
             if cam != None:
                 cang = cam.data.angle*180/pi
                 vv = cang * lexport.scene.render.resolution_y/lexport.scene.render.resolution_x
-                subprocess.call("rvu -o qt -n {0} -vv {1:.3f} -vh {2:.3f} -vd {3[0][2]:.3f} {3[1][2]:.3f} {3[2][2]:.3f} -vp {4[0]:.3f} {4[1]:.3f} {4[2]:.3f} {5} {6}-{7}.oct &".format(lexport.nproc, vv, cang, -1*cam.matrix_world, cam.location, lexport.pparams(lexport.scene.livi_calc_acc), lexport.filebase, lexport.scene.frame_current), shell = True)
+                subprocess.call("rvu -w -n {0} -vv {1:.3f} -vh {2:.3f} -vd {3[0][2]:.3f} {3[1][2]:.3f} {3[2][2]:.3f} -vp {4[0]:.3f} {4[1]:.3f} {4[2]:.3f} {5} {6}-{7}.oct &".format(lexport.nproc, vv, cang, -1*cam.matrix_world, cam.location, lexport.pparams(lexport.scene.livi_calc_acc), lexport.filebase, lexport.scene.frame_current), shell = True)
             else:
                 prev_op.report({'ERROR'}, "There is no camera in the scene. Radiance preview will not work")
         else:
@@ -110,7 +117,6 @@ class LiVi_c(object):
                      
                 gfile={"name":"glare"+str(frame)+".hdr"}
                 gfiles.append(gfile)
-
             try:
                 bpy.data.scenes['Scene'].sequence_editor.sequences_all["glare0.hdr"]
                 bpy.ops.sequencer.refresh_all()
@@ -120,7 +126,6 @@ class LiVi_c(object):
                     frame_start=0, \
                     channel=2, \
                     filemode=9)
-                 
         else:
             calc_op.report({'ERROR'}, "There is no camera in the scene. Create one for glare analysis")
         
@@ -131,7 +136,8 @@ class LiVi_c(object):
         res = [[0] * lexport.reslen for frame in range(0, bpy.context.scene.frame_end+1)]
         wd = (7, 5)[int(lexport.scene.livi_calc_da_weekdays)]
         fwd = datetime.datetime(2010, 1, 1).weekday()
-        vecvals = [[x%24, (fwd+x)%7] for x in range(0,8760)]
+        vecvals = [[x%24, (fwd+x)%7] for x in range(0,8760)] if np == 0 else numpy.array([[x%24, (fwd+x)%7] + [0 for p in range(146)] for x in range(0,8760)])
+        patch = 2
         if os.path.splitext(os.path.basename(lexport.scene.livi_export_epw_name))[1] in (".hdr", ".HDR"):
             skyrad = open(lexport.filebase+".whitesky", "w")    
             skyrad.write("void glow sky_glow \n0 \n0 \n4 1 1 1 0 \nsky_glow source sky \n0 \n0 \n4 0 0 1 180 \nvoid glow ground_glow \n0 \n0 \n4 1 1 1 0 \nground_glow source ground \n0 \n0 \n4 0 0 -1 180\n\n")
@@ -140,40 +146,51 @@ class LiVi_c(object):
             hour = 0
             mtxlines = mtx.readlines()
             mtx.close() 
-            for fvals in mtxlines[:]:
-                if fvals != "\n" and math.isnan(float(fvals.split(" ")[0])) == False:
-                    vecvals[hour].append(round(float(fvals.split(" ")[0]) +  float(fvals.split(" ")[1]) + float(fvals.split(" ")[2]), 2))
+            for fvals in mtxlines:
+                linevals = fvals.split(" ")
+                try:
+                    sumvals = round(float(linevals[0]) +  float(linevals[1]) + float(linevals[2]), 4) 
+                    if sumvals > 0:
+                        if np == 1:
+                            vecvals[hour,patch] = sumvals
+                        else:
+                            vecvals[hour][patch] = sumvals
                     hour += 1
-                elif fvals != "\n" and math.isnan(float(fvals.split(" ")[0])) == True:
-                    vecvals[hour].append(0)
-                    hour += 1 
-                else:
-                    hour = 0
+                except:
+                    if fvals != "\n":
+                        hour += 1 
+                    else:
+                        patch += 1
+                        hour = 0
+            
         else:
-            vecvals = lexport.vecvals  
+            vecvals = lexport.vecvals 
 
         for frame in range(0, bpy.context.scene.frame_end+1):
             hours = 0
-            sensarray = [[] for x in range(0, 146)]
+            sensarray = [[0 for x in range(lexport.reslen)] for y in range(146)] if np == 0 else numpy.zeros([146, lexport.reslen])
             subprocess.call("oconv -w "+lexport.lights(frame)+" "+lexport.filename+".whitesky "+lexport.mat(frame)+" "+lexport.poly(frame)+" > "+lexport.filename+"-"+str(frame)+"ws.oct", shell = True)
             if not os.path.isdir(lexport.newdir+lexport.fold+"s_data"):
                 os.makedirs(lexport.newdir+lexport.fold+"s_data")
-            
-            subprocess.call(lexport.cat+lexport.filebase+".rtrace | rcontrib -h -I -fo -bn 146 -ab 3 -ad 4096 -lw 0.0003 -n "+lexport.nproc+" -f tregenza.cal -b tbin -o "+lexport.newdir+lexport.fold+"s_data/"+str(frame)+"-sensor%d.dat -m sky_glow "+lexport.filename+"-"+str(frame)+"ws.oct", shell = True)
-            
+            subprocess.call(lexport.cat+lexport.filebase+".rtrace | rcontrib -w -h -I -fo -bn 146 -ab 3 -ad 4096 -lw 0.0003 -n "+lexport.nproc+" -f tregenza.cal -b tbin -o "+lexport.newdir+lexport.fold+"s_data/"+str(frame)+"-sensor%d.dat -m sky_glow "+lexport.filename+"-"+str(frame)+"ws.oct", shell = True)
+
             for i in range(0, 146):
                 sensfile = open(lexport.newdir+"/s_data/"+str(frame)+"-sensor"+str(i)+".dat", "r")
-                for sens in sensfile.readlines():
-                    sensarray[i].append(sens.strip("\n").split("\t"))
+                for s,sens in enumerate(sensfile.readlines()):
+                    sensfloat = [float(x) for x in (sens.split("\t")[0:-1])]
+                    if np == 1:
+                        sensarray[i,s] = 179 * (0.265*sensfloat[0] + 0.67*sensfloat[1]+0.065*sensfloat[2])
+                    elif np == 0:
+                        sensarray[i][s] = 179 * (0.265*sensfloat[0] + 0.67*sensfloat[1]+0.065*sensfloat[2])
                 sensfile.close()
+
             for l, readings in enumerate(vecvals):
-                finalillu = []
+                finalillu = [0 for x in range(0, lexport.reslen)] if np == 0 else numpy.zeros((lexport.reslen))
                 for i in range(0, 146):
-                    if float(readings[0]) >= lexport.scene.livi_calc_dastart_hour and float(readings[0]) < lexport.scene.livi_calc_daend_hour and float(readings[1]) < wd:
-                        for j, sens in enumerate(sensarray[i]):
-                            senreading = 179*(0.265*float(sens[0])+0.67*float(sens[1])+0.065*float(sens[2]))
+                    if lexport.scene.livi_calc_dastart_hour <= float(readings[0]) < lexport.scene.livi_calc_daend_hour and float(readings[1]) < wd:
+                        for j, senreading in enumerate(sensarray[i]):
                             if i == 0:
-                                finalillu.append(senreading*readings[i+2])
+                                finalillu[j] = senreading*readings[i+2]
                                 if j == 0:
                                     hours += 1
                             else:
@@ -181,14 +198,15 @@ class LiVi_c(object):
                 for k, reading in enumerate(finalillu):
                     if reading > lexport.scene.livi_calc_min_lux:
                         res[frame][k] += 1
+            finalillu = [0 for x in range(0, lexport.reslen)] if np == 0 else numpy.zeros((lexport.reslen))
                         
             for r in range(0, len(res[frame])):
                 if hours != 0:
                     res[frame][r] = res[frame][r]*100/hours
-
             daresfile = open(lexport.newdir+"/"+self.simlistn[int(lexport.metric)]+"-"+str(frame)+".res", "w")
             daresfile.write("{:.2f}\n".format(*res[frame]))
             daresfile.close()
+        
         calc_op.report({'INFO'}, "Calculation is finished.") 
         self.resapply(res, lexport) 
         
@@ -215,9 +233,40 @@ class LiVi_c(object):
                 h = 0.75*(1-(res[frame][i]-min(lexport.scene['resmin']))/(max(lexport.scene['resmax']) + 0.01 - min(lexport.scene['resmin'])))
                 rgb.append(colorsys.hsv_to_rgb(h, 1.0, 1.0))
 
-            for geo in self.scene.objects:
+            for geo in [geo for geo in self.scene.objects if geo.type == 'MESH']:
                 bpy.ops.object.select_all(action = 'DESELECT')
                 self.scene.objects.active = None
+                try:
+                    if hasattr(geo, 'calc') and geo['calc'] == 1:
+                        self.scene.objects.active = geo
+                        geo.select = True
+                        if frame == 0:
+                            while len(geo.data.vertex_colors) > 0:
+                                bpy.ops.mesh.vertex_color_remove()
+                            
+                        bpy.ops.mesh.vertex_color_add()
+                        geo.data.vertex_colors[frame].name = str(frame)
+                        vertexColour = geo.data.vertex_colors[frame]
+                 
+                        for face in geo.data.polygons:
+                            if "calcsurf" in str(geo.data.materials[face.material_index].name):
+                                if self.scene['cp'] == 1:
+                                    for loop_index in face.loop_indices:
+                                        v = geo.data.loops[loop_index].vertex_index
+                                        col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
+                                        lcol_i.append(col_i)
+                                        vertexColour.data[loop_index].color = rgb[col_i+mcol_i]
+                                    
+                                if self.scene['cp'] == 0:
+                                    for loop_index in face.loop_indices:
+                                        vertexColour.data[loop_index].color = rgb[f]
+                                    f += 1
+                           
+                        mcol_i = len(tuple(set(lcol_i)))   
+        
+                except Exception as e:
+                    print(e)
+
                 if geo.livi_calc == 1:
                     self.scene.objects.active = geo
                     geo.select = True
@@ -235,12 +284,8 @@ class LiVi_c(object):
                                 cvtup = tuple(geo['cverts'])
                                 for loop_index in face.loop_indices:
                                     v = geo.data.loops[loop_index].vertex_index
-#                                    col_i = [vi for vi, vval in enumerate(geo['cverts']) if v == geo['cverts'][vi]][0]
-#                                    print(col_i)
                                     if v in cvtup:
                                         col_i = cvtup.index(v) 
-#                                        print(col_i2)
-#                                    col_i = geo['cverts'].index(v)
                                     lcol_i.append(col_i)
                                     vertexColour.data[loop_index].color = rgb[col_i+mcol_i]
 
@@ -248,9 +293,7 @@ class LiVi_c(object):
                                 for loop_index in face.loop_indices:
                                     vertexColour.data[loop_index].color = rgb[f]
                                 f += 1
-                        
                     mcol_i = len(list(set(lcol_i)))
-        
         lexport.scene.livi_display_panel = 1
         
         for frame in range(0, self.scene.frame_end+1):
@@ -269,5 +312,4 @@ class LiVi_c(object):
                             vc.keyframe_insert("active")
                             vc.keyframe_insert("active_render")
            
-        
         bpy.ops.wm.save_mainfile(check_existing = False)
