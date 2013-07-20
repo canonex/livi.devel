@@ -17,10 +17,10 @@
 # ##### END GPL LICENSE BLOCK #####
 
 bl_info = {
-    "name": "Lighting Visualiser (LiVi) Development Version",
+    "name": "Lighting Visualiser (LiVi) development version",
     "author": "Ryan Southall",
-    "version": (0, 3, 0),
-    "blender": (2, 6, 7),
+    "version": (0, 3, 1),
+    "blender": (2, 6, 8),
     "api":"",
     "location": "3D View > Properties Panel",
     "description": "Radiance exporter and results visualiser",
@@ -33,7 +33,7 @@ if "bpy" in locals():
     import imp
     imp.reload(livi_ui)
 else:
-    from io_livi_dev import livi_ui
+    from . import livi_ui
 
 import bpy, os, sys, platform, inspect
 from bpy.props import BoolProperty, IntProperty, FloatProperty, EnumProperty, StringProperty
@@ -41,10 +41,12 @@ from bpy.props import BoolProperty, IntProperty, FloatProperty, EnumProperty, St
 addonpath = os.path.dirname(inspect.getfile(inspect.currentframe()))
 
 if sys.platform == 'darwin':
-    if platform.architecture() == "64bit":
-        os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:{}/osx/64".format(addonpath)
+    if platform.architecture()[0] == "64bit":
+        if "{}/osx/64".format(addonpath) not in os.environ["PATH"]:
+            os.environ["PATH"] = os.environ["PATH"] + ":{}/osx/64".format(addonpath)
     else:
-         os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:{}/osx".format(addonpath)
+        if "{/usr/local/radiance/bin:{}/osx".format(addonpath) not in os.environ["PATH"]:
+            os.environ["PATH"] = os.environ["PATH"] + ":/usr/local/radiance/bin:{}/osx".format(addonpath)
     os.environ["RAYPATH"] = "/usr/local/radiance/lib:{}/lib".format(addonpath)
 
 elif sys.platform == 'win32':
@@ -77,7 +79,6 @@ def register():
             description="Specify the IES file measurement unit",
             default="m")
     
-
     # LiVi Export panel properties    
     Scene = bpy.types.Scene
     Object = bpy.types.Object
